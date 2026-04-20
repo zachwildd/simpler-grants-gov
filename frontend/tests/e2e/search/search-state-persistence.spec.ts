@@ -512,4 +512,160 @@ test.describe("Search page - state persistence after refresh", () => {
       expectURLQueryParamValues(page, "agency", [subAgency.value]);
     },
   );
+
+  test(
+    "should retain all filters, search input, and sort combined after refresh (#8664)",
+    { tag: [GRANTEE, OPPORTUNITY_SEARCH, CORE_REGRESSION] },
+    async ({ page }, { project }) => {
+      test.setTimeout(300_000);
+      const isMobile = !!project.name.match(/[Mm]obile/);
+      await goToSearch(page);
+      await waitForSearchResultsInitialLoad(page);
+
+      // 1. Enter search term
+      await fillSearchInputAndSubmit(searchTerm, page, project.name);
+      await waitForURLContainsQueryParamValue(page, "query", searchTerm, 120000);
+
+      // 2. Open filter drawer and select sort option
+      await ensureFilterDrawerOpen(page);
+      await selectSortBy(page, "awardCeilingDesc", isMobile, project.name);
+      await waitForURLContainsQueryParamValue(
+        page,
+        "sortby",
+        "awardCeilingDesc",
+        120000,
+      );
+
+      // 3. Apply status filter
+      await ensureFilterDrawerOpen(page);
+      await ensureAccordionExpanded(page, "Opportunity status");
+      await toggleCheckboxGroup(page, statusCheckboxes);
+      await waitForURLContainsQueryParamValues(
+        page,
+        "status",
+        ["forecasted", "posted", "closed"],
+        120000,
+      );
+
+      // 4. Apply funding instrument filter
+      await ensureAccordionExpanded(page, "Funding instrument");
+      await toggleCheckboxGroup(page, fundingInstrumentCheckboxes);
+      await waitForURLContainsQueryParamValues(
+        page,
+        "fundingInstrument",
+        ["grant"],
+        120000,
+      );
+
+      // 5. Apply eligibility filter
+      await ensureAccordionExpanded(page, "Eligibility");
+      await toggleCheckboxGroup(page, eligibilityCheckboxes);
+      await waitForURLContainsQueryParamValues(
+        page,
+        "eligibility",
+        ["county_governments"],
+        120000,
+      );
+
+      // 6. Apply category filter
+      await ensureAccordionExpanded(page, "Category");
+      await toggleCheckboxGroup(page, categoryCheckboxes);
+      await waitForURLContainsQueryParamValues(
+        page,
+        "category",
+        ["agriculture"],
+        120000,
+      );
+
+      // 7. Apply agency filter (top-level "All" checkbox)
+      await waitForFilterOptions(page, "agency");
+      await ensureAccordionExpanded(page, "Agency");
+      await page.waitForTimeout(2000);
+
+      const allAgencyCheckbox = page
+        .locator('input[type="checkbox"][id$="-all"]')
+        .first();
+      const agencyCheckboxId = await allAgencyCheckbox.getAttribute("id");
+      expect(agencyCheckboxId).toBeTruthy();
+
+      if (!agencyCheckboxId) {
+        test.fail();
+        return;
+      }
+
+      await toggleCheckbox(page, agencyCheckboxId);
+      await page.waitForFunction(
+        () => {
+          const url = new URL(window.location.href);
+          return url.searchParams.has("topLevelAgency");
+        },
+        { timeout: 120000 },
+      );
+
+      // Capture expected agency values from URL
+      const urlBeforeRefresh = new URL(page.url());
+      const topLevelAgencyValues =
+        urlBeforeRefresh.searchParams.get("topLevelAgency")?.split(",") || [];
+      expect(topLevelAgencyValues.length).toBeGreaterThan(0);
+
+      // 8. Verify URL contains all query parameters before refresh
+      expectURLQueryParamValue(page, "query", searchTerm);
+      expectURLQueryParamValue(page, "sortby", "awardCeilingDesc");
+      expectURLQueryParamValues(page, "status", [
+        "forecasted",
+        "posted",
+        "closed",
+      ]);
+      expectURLQueryParamValues(page, "fundingInstrument", ["grant"]);
+      expectURLQueryParamValues(page, "eligibility", ["county_governments"]);
+      expectURLQueryParamValues(page, "category", ["agriculture"]);
+      expectURLQueryParamValues(page, "topLevelAgency", topLevelAgencyValues);
+
+      // 9. Refresh the page
+      await refreshPageWithCurrentURL(page);
+      await waitForSearchResultsInitialLoad(page, 180000);
+
+      // 10. Verify search input is retained
+      const searchInput = getSearchInput(page);
+      await expect(searchInput).toHaveValue(searchTerm, { timeout: 60000 });
+
+      // 11. Verify sort selection is retained
+      await expectSortBy(page, "awardCeilingDesc", isMobile);
+
+      // 12. Verify all filter checkboxes are still checked
+      await ensureFilterDrawerOpen(page);
+
+      await ensureAccordionExpanded(page, "Opportunity status");
+      await expectCheckboxesChecked(page, statusCheckboxes);
+
+      await ensureAccordionExpanded(page, "Funding instrument");
+      await expectCheckboxesChecked(page, fundingInstrumentCheckboxes);
+
+      await ensureAccordionExpanded(page, "Eligibility");
+      await expectCheckboxesChecked(page, eligibilityCheckboxes);
+
+      await ensureAccordionExpanded(page, "Category");
+      await expectCheckboxesChecked(page, categoryCheckboxes);
+
+      await ensureAccordionExpanded(page, "Agency");
+      await page.waitForTimeout(1000);
+      const agencyCheckboxAfterRefresh = page
+        .locator(`input[id="${agencyCheckboxId}"]`)
+        .first();
+      await expect(agencyCheckboxAfterRefresh).toBeChecked({ timeout: 15000 });
+
+      // 13. Verify URL retains all values after refresh
+      expectURLQueryParamValue(page, "query", searchTerm);
+      expectURLQueryParamValue(page, "sortby", "awardCeilingDesc");
+      expectURLQueryParamValues(page, "status", [
+        "forecasted",
+        "posted",
+        "closed",
+      ]);
+      expectURLQueryParamValues(page, "fundingInstrument", ["grant"]);
+      expectURLQueryParamValues(page, "eligibility", ["county_governments"]);
+      expectURLQueryParamValues(page, "category", ["agriculture"]);
+      expectURLQueryParamValues(page, "topLevelAgency", topLevelAgencyValues);
+    },
+  );
 });
