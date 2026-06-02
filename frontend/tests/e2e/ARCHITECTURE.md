@@ -381,6 +381,7 @@ Each form has a pair of files in `apply/fixtures/`:
 | SF-LLL | `sfLLL-field-definitions.ts` | `sfLLL-fill-data.ts` |
 | CD-511 | `cd511-field-definitions.ts` | `cd511-fill-data.ts` |
 | Grants.gov Lobbying | `grantsgov-lobbying-field-definitions.ts` | `grantsgov-lobbying-fill-data.ts` |
+| Project/Performance Site Locations | `project-performance-site-locations-field-definitions.ts` | `project-performance-site-locations-fill-data.ts` |
 | EPA Key Contacts | `epa-key-contacts-field-definitions.ts` | `epa-key-contacts-fill-data.ts` |
 | EPA 4700-4 | `epa4700-4-field-definitions.ts` | `epa4700-4-fill-data.ts` |
 | Project Abstract | `project-abstract-field-definitions.ts` | `project-abstract-fill-data.ts` |

@@ -63,3 +63,32 @@ export const sf424HappyPathTestData = {
   authorized_representative_fax: "3333333333",
   authorized_representative_email: "AOR@Test.com",
 } as const;
+
+function sanitizeUniqueToken(uniqueToken: string): string {
+  const sanitized = uniqueToken.replace(/[^a-zA-Z0-9]/g, "").slice(-12);
+  return sanitized || "e2eunique";
+}
+
+export function sf424HappyPathTestDataWithUniqueValues(uniqueToken: string) {
+  const token = sanitizeUniqueToken(uniqueToken);
+  const lowerToken = token.toLowerCase();
+
+  return {
+    ...sf424HappyPathTestData,
+    revision_other_specify: `Revision-${token}`,
+    federal_award_identifier: `Award-${token}`,
+    organization_name: `Legal Name ${token}`,
+    applicant_street1: `${token} Main St`,
+    applicant_city: `City${token}`,
+    division_name: `Automation Division ${token}`,
+    contact_person_first_name: `First${token}`,
+    contact_person_last_name: `Last${token}`,
+    email: `${lowerToken}@example.com`,
+    agency_name: `Agency ${token}`,
+    assistance_listing_program_title: `Program ${token}`,
+    project_title: `Project ${token}`,
+    authorized_representative_first_name: `AorFirst${token}`,
+    authorized_representative_last_name: `AorLast${token}`,
+    authorized_representative_email: `aor.${lowerToken}@example.com`,
+  };
+}

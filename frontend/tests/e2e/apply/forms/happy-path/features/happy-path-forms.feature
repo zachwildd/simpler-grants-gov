@@ -57,6 +57,7 @@ Feature: Apply - Application Form Happy Path
       | Grants.gov Lobbying                |
       | Project Abstract                   |
       | Project Abstract Summary           |
+      | Project/Performance Site Locations |
       | Project Narrative Attachments      |
       | Other Narrative Attachments        |
       | Budget Narrative Attachment        |
